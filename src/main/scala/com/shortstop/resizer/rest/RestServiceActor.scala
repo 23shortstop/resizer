@@ -5,6 +5,7 @@ import java.util.Date
 
 import akka.actor.{ActorContext, Actor}
 import akka.event.slf4j.SLF4JLogging
+import com.shortstop.resizer.dao.UserDAO
 import com.shortstop.resizer.domain.Failure
 import net.liftweb.json.{DateFormat, Formats}
 import net.liftweb.json.Serialization._
@@ -25,6 +26,8 @@ class RestServiceActor extends Actor with RestService {
  * REST Service
  */
 trait RestService extends HttpService with SLF4JLogging {
+
+  val userService = new UserDAO
 
   implicit val executionContext = actorRefFactory.dispatcher
 
@@ -53,7 +56,16 @@ trait RestService extends HttpService with SLF4JLogging {
   }
 
   val rest = respondWithMediaType(MediaTypes.`application/json`) {
-    Nil
+    path("api" / "user") {
+      post {
+        ctx: RequestContext =>
+          handleRequest(ctx, StatusCodes.Created) {
+            log.debug(s"Creating new user.")
+            val user = userService.create
+            user.right.map(user => Map("key" -> user.key))
+          }
+      }
+    }
   }
 
   /**
