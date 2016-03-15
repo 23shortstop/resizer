@@ -21,8 +21,8 @@ object Users extends Table[User]("users") {
 
   def * = id.? ~ key <>(User, User.unapply _)
 
-  val findById = for {
-    id <- Parameters[Long]
-    c <- this if c.id is id
+  val findByKey = for {
+    key <- Parameters[String]
+    c <- this if c.key is key
   } yield c
 }
