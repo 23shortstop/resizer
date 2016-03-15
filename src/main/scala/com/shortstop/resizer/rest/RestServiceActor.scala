@@ -5,6 +5,7 @@ import java.util.Date
 
 import akka.actor.{ActorContext, Actor}
 import akka.event.slf4j.SLF4JLogging
+import com.shortstop.resizer.domain.Failure
 import net.liftweb.json.{DateFormat, Formats}
 import net.liftweb.json.Serialization._
 import spray.http._
@@ -53,5 +54,23 @@ trait RestService extends HttpService with SLF4JLogging {
 
   val rest = respondWithMediaType(MediaTypes.`application/json`) {
     Nil
+  }
+
+  /**
+   * Handles an incoming request and create valid response for it.
+   *
+   * @param ctx         request context
+   * @param successCode HTTP Status code for success
+   * @param action      action to perform
+   */
+  protected def handleRequest(ctx: RequestContext, successCode: StatusCode = StatusCodes.OK)(action: => Either[Failure, _]) {
+    action match {
+      case Right(result: Object) =>
+        ctx.complete(successCode, write(result))
+      case Left(error: Failure) =>
+        ctx.complete(error.getStatusCode, net.liftweb.json.Serialization.write(Map("error" -> error.message)))
+      case _ =>
+        ctx.complete(StatusCodes.InternalServerError)
+    }
   }
 }
