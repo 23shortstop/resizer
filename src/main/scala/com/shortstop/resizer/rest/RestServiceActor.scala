@@ -19,7 +19,7 @@ class RestServiceActor extends Actor with RestService {
 
   implicit def actorRefFactory: ActorContext = context
 
-  def receive = runRoute(rest)
+  def receive = runRoute(rest ~ images)
 }
 
 /**
@@ -65,6 +65,13 @@ trait RestService extends HttpService with SLF4JLogging {
             user.right.map(user => Map("key" -> user.key))
           }
       }
+    }
+  }
+
+  val images = respondWithMediaType(MediaTypes.`image/jpeg`) {
+    path("images" / Rest) {
+      directory =>
+        getFromBrowseableDirectory(s"images/$directory")
     }
   }
 
