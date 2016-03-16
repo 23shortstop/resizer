@@ -59,7 +59,7 @@ trait RestService extends HttpService with SLF4JLogging {
     path("api" / "user") {
       post {
         ctx: RequestContext =>
-          handleRequest(ctx, StatusCodes.Created) {
+          handleRequest(ctx, StatusCodes.OK) {
             log.debug(s"Creating new user.")
             val user = userService.create
             user.right.map(user => Map("key" -> user.key))
