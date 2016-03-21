@@ -1,12 +1,17 @@
 package com.shortstop.resizer.rest
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import akka.actor.{ActorContext, Actor}
-import com.shortstop.resizer.domain.{ResizeParameters, Failure}
+import com.shortstop.resizer.domain.{HistoryParameters, ResizeParameters, Failure}
+import net.liftweb.json.{DateFormat, Formats}
 import net.liftweb.json.Serialization._
 import spray.http._
 import spray.httpx.unmarshalling._
 import spray.routing._
 import com.shortstop.resizer.domain.ResizeParameters._
+import com.shortstop.resizer.domain.HistoryParameters._
 
 /**
  * REST Service actor.
@@ -24,6 +29,20 @@ class RestServiceActor extends Actor with RestService {
 trait RestService extends HttpService with RequestHandler {
 
   implicit val executionContext = actorRefFactory.dispatcher
+
+  implicit val liftJsonFormats = new Formats {
+    val dateFormat = new DateFormat {
+      val sdf = new SimpleDateFormat("yyyy-MM-dd")
+
+      def parse(s: String): Option[Date] = try {
+        Some(sdf.parse(s))
+      } catch {
+        case e: Exception => None
+      }
+
+      def format(d: Date): String = sdf.format(d)
+    }
+  }
 
   implicit val customRejectionHandler = RejectionHandler {
     case rejections => mapHttpResponse {
@@ -55,7 +74,19 @@ trait RestService extends HttpService with RequestHandler {
             }
           }
         }
+      } ~
+    path("api" / "history") {
+      post {
+        entity(as[HistoryParameters]) {
+          historyParameters: HistoryParameters => {
+            ctx: RequestContext =>
+              handleRequest(ctx) {
+                history(historyParameters)
+              }
+          }
+        }
       }
+    }
   }
 
   val images = respondWithMediaType(MediaTypes.`image/jpeg`) {

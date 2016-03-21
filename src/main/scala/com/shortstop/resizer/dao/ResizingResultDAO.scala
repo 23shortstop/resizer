@@ -42,4 +42,23 @@ class ResizingResultDAO {
         Left(databaseError(e))
     }
   }
+
+  /**
+   * Returns resizing history of a user with specified id.
+   *
+   * @param userId a user id.
+   * @return
+   */
+  def getHistory(userId: Long): Either[Failure, Vector[ResizingResult]] = {
+    try {
+      db.withTransaction {
+        val query = ResizingResults.where(_.user === userId)
+        val results: Vector[ResizingResult] = query.run.asInstanceOf[Vector[ResizingResult]]
+        Right(results)
+      }
+    } catch {
+      case e: SQLException =>
+        Left(databaseError(e))
+    }
+  }
 }

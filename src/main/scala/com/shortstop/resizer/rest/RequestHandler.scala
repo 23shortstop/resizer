@@ -3,7 +3,7 @@ package com.shortstop.resizer.rest
 import akka.event.slf4j.SLF4JLogging
 import com.shortstop.resizer.config.Configuration
 import com.shortstop.resizer.dao.{ResizingResultDAO, UserDAO}
-import com.shortstop.resizer.domain.ResizeParameters
+import com.shortstop.resizer.domain.{HistoryParameters, ResizeParameters}
 import com.shortstop.resizer.utils.{FileHelper, ImageHelper}
 
 /**
@@ -50,6 +50,25 @@ trait RequestHandler extends SLF4JLogging with Configuration {
     log.debug(s"Creating new user.")
     val user = userService.create
     user.right.map(user => Map("key" -> user.key))
+  }
+
+  /**
+   * Returns history of resize requests for a user.
+   */
+  def history(historyParameters: HistoryParameters) = {
+    log.debug(s"Returning of history.")
+    for {
+      user <- userService.get(historyParameters.key).right
+      userId <- userService.getId(user).right
+      results <- resizingService.getHistory(userId).right
+    } yield {
+      results.map( result => Map(
+        "original" -> s"$serviceHost:$servicePort/${result.original}",
+        "resized" -> s"$serviceHost:$servicePort/${result.resized}",
+        "height" -> result.height,
+        "width" -> result.width
+      ))
+    }
   }
 
 }
