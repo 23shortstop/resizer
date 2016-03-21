@@ -1,7 +1,7 @@
 package com.shortstop.resizer.rest
 
-
 import akka.event.slf4j.SLF4JLogging
+import com.shortstop.resizer.config.Configuration
 import com.shortstop.resizer.dao.{ResizingResultDAO, UserDAO}
 import com.shortstop.resizer.domain.ResizeParameters
 import com.shortstop.resizer.utils.{FileHelper, ImageHelper}
@@ -9,7 +9,7 @@ import com.shortstop.resizer.utils.{FileHelper, ImageHelper}
 /**
  * Provides logic to handle requests.
  */
-trait RequestHandler extends SLF4JLogging {
+trait RequestHandler extends SLF4JLogging with Configuration {
 
   val userService = new UserDAO
 
@@ -32,7 +32,12 @@ trait RequestHandler extends SLF4JLogging {
     } yield {
       FileHelper.saveImage(images._1, result.original)
       FileHelper.saveImage(images._2, result.resized)
-      result
+      Map(
+        "original" -> s"$serviceHost:$servicePort/${result.original}",
+        "resized" -> s"$serviceHost:$servicePort/${result.resized}",
+        "height" -> result.height,
+        "height" -> result.height
+      )
     }
   }
 
