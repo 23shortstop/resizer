@@ -1,6 +1,7 @@
 package com.shortstop.resizer.dao
 
 import java.sql.SQLException
+import java.util.UUID
 import com.shortstop.resizer.dao.DataBase._
 import com.shortstop.resizer.domain._
 import scala.slick.driver.MySQLDriver.simple.Database.threadLocalSession
@@ -29,14 +30,13 @@ class ResizingResultDAO {
    */
   def create(userId: Long, height: Int, width: Int): Either[Failure, ResizingResult] = {
     try {
-      val resizingResult = ResizingResult(None, userId, "", "", height, width)
+      val imageName = UUID.randomUUID().toString
+      val resizingResult = ResizingResult(None, userId, s"images/$userId/origin/$imageName",
+        s"images/$userId/resized/$imageName", height, width)
       val id = db.withSession {
         ResizingResults returning ResizingResults.id insert resizingResult
       }
-      Right(resizingResult.copy(
-        id = Some(id),
-        original = s"images/$userId/origin/$id",
-        resized = s"images/$userId/resized/$id"))
+      Right(resizingResult.copy(id = Some(id)))
     } catch {
       case e: SQLException =>
         Left(databaseError(e))
