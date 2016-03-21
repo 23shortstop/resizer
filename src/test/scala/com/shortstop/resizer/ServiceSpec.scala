@@ -1,10 +1,18 @@
 package com.shortstop.resizer
 
-import com.shortstop.resizer.domain.Users
+import java.io.File
+
+import com.sksamuel.scrimage.Image
 import spray.http.HttpEntity
-import spray.http.HttpMethods._
-import spray.http.StatusCodes._
 import spray.http.HttpRequest
+
+import com.shortstop.resizer.domain.{ResizeParameters, Users}
+import net.liftweb.json.Serialization
+import spray.http.HttpMethods._
+import spray.http._
+import spray.http.StatusCodes._
+import TestData._
+
 import scala.slick.driver.MySQLDriver.simple.Database.threadLocalSession
 
 class ServiceSpec extends ServiceTestBase {
@@ -25,6 +33,50 @@ class ServiceSpec extends ServiceTestBase {
           val user = key.flatMap(Users.findByKey(_).firstOption)
           user should not be equalTo(None)
           user.map(_.id.get).getOrElse(0L) must be greaterThan 0L
+        }
+      }
+    }
+
+    "resize images" in {
+      saveUser
+      testImages.map { image =>
+        val base64 = Base64encoder.encode(image)
+        val requestHeight = 50
+        val requestWidth = 100
+        HttpRequest(
+          method = POST,
+          uri = resizeLink,
+          entity = HttpEntity(ContentType(MediaTypes.`application/json`),
+            Serialization.write(ResizeParameters(userKey, base64, requestHeight, requestWidth)))) ~> service ~> check {
+          response.status should be equalTo OK
+          response.entity should not be equalTo(None)
+
+          val responseMap = responseAs[Map[String, String]]
+
+          val origin = responseMap.get("original")
+          origin should not be equalTo(None)
+          origin.get.contains(s"/images/$userId/origin/")
+
+          val resized = responseMap.get("resized")
+          resized should not be equalTo(None)
+          resized.get.contains(s"/images/$userId/resized/")
+
+          val resizedFile = new File(resized.get.dropWhile(_ != '/').drop(1))
+          val resizedImage = Image.fromFile(resizedFile)
+          resizedImage.height === requestHeight
+          resizedImage.width === requestWidth
+
+          val height = responseMap.get("height")
+          height should not be equalTo(None)
+          height.get.toInt should be equalTo requestHeight
+
+          val width = responseMap.get("width")
+          width should not be equalTo(None)
+          width.get.toInt should be equalTo requestWidth
+
+          val originFile = new File(origin.get.dropWhile(_ != '/').drop(1))
+          resizedFile.delete() === true
+          originFile.delete() === true
         }
       }
     }

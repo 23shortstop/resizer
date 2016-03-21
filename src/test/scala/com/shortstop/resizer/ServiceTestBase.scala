@@ -1,5 +1,17 @@
 package com.shortstop.resizer
 
+import scala.language.existentials
+import org.specs2.mutable.{Before, Specification}
+import spray.testkit.Specs2RouteTest
+import spray.routing.HttpService
+import akka.actor.ActorRefFactory
+import spray.http.{HttpCharsets, HttpEntity}
+import net.liftweb.json.Serialization
+import scala.slick.session.Database
+import scala.slick.driver.MySQLDriver.simple.Database.threadLocalSession
+import scala.slick.driver.MySQLDriver.simple._
+import slick.jdbc.meta.MTable
+
 import java.text.SimpleDateFormat
 import java.util.Date
 import net.liftweb.json.{DateFormat, Formats, Serialization}
@@ -16,6 +28,7 @@ import scala.slick.session.Database
 import scala.slick.driver.MySQLDriver.simple.Database.threadLocalSession
 import scala.slick.driver.MySQLDriver.simple._
 import slick.jdbc.meta.MTable
+import TestData._
 
 trait ServiceTestBase extends Specification with Specs2RouteTest with HttpService with Configuration with Before {
   args(sequential = true)
@@ -25,6 +38,8 @@ trait ServiceTestBase extends Specification with Specs2RouteTest with HttpServic
     user = dbUser, password = dbPassword, driver = "com.mysql.jdbc.Driver")
 
   val userLink = "/api/user"
+
+  val resizeLink = "/api/resize"
 
   implicit def actorRefFactory: ActorSystem = system
 
@@ -58,6 +73,13 @@ trait ServiceTestBase extends Specification with Specs2RouteTest with HttpServic
         Users.ddl.drop
         Users.ddl.create
       }
+    }
+  }
+
+  def saveUser = {
+    db.withSession {
+      Users returning Users.id insert testUser
+      testUser copy(id = Some(userId))
     }
   }
 
