@@ -12,17 +12,17 @@ import scala.slick.driver.MySQLDriver.simple._
  * @param height    value of height which image after resizing
  * @param width     value of width which image after resizing
  */
-case class Resizing(id: Option[Long],
-                    user: Long,
-                    original: String,
-                    resized: String,
-                    height: Long,
-                    width: Long)
+case class ResizingResult(id: Option[Long],
+                          user: Long,
+                          original: String,
+                          resized: String,
+                          height: Int,
+                          width: Int)
 
 /**
- * A mapped resizing requests table object.
+ * A mapped resizing results table object.
  */
-object Resizings extends Table[Resizing]("qwe") {
+object ResizingResults extends Table[ResizingResult]("resizing_results") {
 
   def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
@@ -32,10 +32,10 @@ object Resizings extends Table[Resizing]("qwe") {
 
   def resized = column[String]("resized")
 
-  def height = column[Long]("height")
+  def height = column[Int]("height")
 
-  def width = column[Long]("width")
+  def width = column[Int]("width")
 
-  def * = id.? ~ user ~ original ~ resized ~ height ~ width <>(Resizing, Resizing.unapply _)
+  def * = id.? ~ user ~ original ~ resized ~ height ~ width <>(ResizingResult, ResizingResult.unapply _)
 
 }
