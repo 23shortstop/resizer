@@ -17,7 +17,7 @@ class ServiceSpec extends ServiceTestBase {
     "create users" in {
       HttpRequest(POST, userLink, entity = HttpEntity("")) ~> service ~> check {
 
-        response.status should be equalTo Created
+        response.status should be equalTo OK
         response.entity should not be equalTo(None)
         val key = responseAs[Map[String, String]].get("key")
         key should not be equalTo(None)
