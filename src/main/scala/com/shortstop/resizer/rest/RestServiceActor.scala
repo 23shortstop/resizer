@@ -1,16 +1,12 @@
 package com.shortstop.resizer.rest
 
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import akka.actor.{ActorContext, Actor}
-import akka.event.slf4j.SLF4JLogging
-import com.shortstop.resizer.dao.UserDAO
-import com.shortstop.resizer.domain.Failure
-import net.liftweb.json.{DateFormat, Formats}
+import com.shortstop.resizer.domain.{ResizeParameters, Failure}
 import net.liftweb.json.Serialization._
 import spray.http._
+import spray.httpx.unmarshalling._
 import spray.routing._
+import com.shortstop.resizer.domain.ResizeParameters._
 
 /**
  * REST Service actor.
@@ -25,25 +21,9 @@ class RestServiceActor extends Actor with RestService {
 /**
  * REST Service
  */
-trait RestService extends HttpService with SLF4JLogging {
-
-  val userService = new UserDAO
+trait RestService extends HttpService with RequestHandler {
 
   implicit val executionContext = actorRefFactory.dispatcher
-
-  implicit val liftJsonFormats = new Formats {
-    val dateFormat = new DateFormat {
-      val sdf = new SimpleDateFormat("yyyy-MM-dd")
-
-      def parse(s: String): Option[Date] = try {
-        Some(sdf.parse(s))
-      } catch {
-        case e: Exception => None
-      }
-
-      def format(d: Date): String = sdf.format(d)
-    }
-  }
 
   implicit val customRejectionHandler = RejectionHandler {
     case rejections => mapHttpResponse {
@@ -59,13 +39,23 @@ trait RestService extends HttpService with SLF4JLogging {
     path("api" / "user") {
       post {
         ctx: RequestContext =>
-          handleRequest(ctx, StatusCodes.OK) {
-            log.debug(s"Creating new user.")
-            val user = userService.create
-            user.right.map(user => Map("key" -> user.key))
+          handleRequest(ctx) {
+            createUser
           }
       }
-    }
+    } ~
+      path("api" / "resize") {
+        post {
+          entity(as[ResizeParameters]) {
+            resizeParameters: ResizeParameters => {
+              ctx: RequestContext =>
+                handleRequest(ctx) {
+                  resize(resizeParameters)
+                }
+            }
+          }
+        }
+      }
   }
 
   val images = respondWithMediaType(MediaTypes.`image/jpeg`) {

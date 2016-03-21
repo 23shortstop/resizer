@@ -40,4 +40,50 @@ class UserDAO {
     }
   }
 
+  /**
+   * Retrieves a user from database by specified key.
+   *
+   * @param key a key of the user to retrieve
+   * @return user entity with specified id
+   */
+  def get(key: String): Either[Failure, User] = {
+    try {
+      db.withSession {
+        Users.findByKey(key).firstOption match {
+          case Some(user: User) =>
+            Right(user)
+          case _ =>
+            Left(notFoundError(key))
+        }
+      }
+    } catch {
+      case e: SQLException =>
+        Left(databaseError(e))
+    }
+  }
+
+  /**
+   * Returns an id of specified user.
+   *
+   * @param user  an instance of a user
+   * @return      an id of of specified user
+   */
+  def getId(user: User) = {
+    try {
+      Right(user.id.get)
+    } catch {
+      case e: SQLException =>
+        Left(databaseError(e))
+    }
+  }
+
+  /**
+   * Produces user not found error description.
+   *
+   * @param userKey id of the customer
+   * @return not found error description
+   */
+  protected def notFoundError(userKey: String) =
+    Failure(s"User with id=$userKey does not exist", FailureType.NotFound)
+
 }
