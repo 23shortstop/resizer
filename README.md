@@ -1,6 +1,7 @@
 # Resizer
 
-This API allows to resize images. User can upload an image along with resize parameters and in response he will receive a resized image. Also, API allows to see list of user's earlier uploaded images along with resized results and parameters. Each user is associated with an unique key which is created when a new user starts to use the service.
+This API allows to resize images. User can upload an image along with resize parameters and in response he will receive a resized image. Also, API allows to see a list of user's earlier uploaded images along with resized results and parameters. Each user is associated with an unique key which is created when a new user starts to use the service.
+Resizer supports common images formats: png, jpeg, gif.
 
 ### Documentation
 
@@ -22,11 +23,60 @@ This endpoint requires not any parameters. A successful response will contain an
 
 > **_/resize_** - Resize an image
 
--
+- To resize an image you should post it as Base64 string to **_/resize_** along with new dimensions and a user key.
+
+- Example request:
+```
+{
+"key":"40ee126b-fabb-4e0d-aed1-4f0b06d7f2da",
+"image":"/9j/4AAQSkZJRgABAgAAZABkAAD/7A...",
+"height":100,
+"width":50
+}
+```
+In response you will obtain a link to a resized image with values of new dimensions.
+
+Example response:
+```
+{
+"original":"localhost:8080/images/2/origin/9",
+"resized":"localhost:8080/images/2/resized/9",
+"height":100,
+"width":50
+}
+```
 
 > **_/history_** - Retrieve history
 
--
+To see a list of earlier uploaded images along with resized results and parameters just post an user key to **_/history_**.
+
+- Example request:
+```
+{
+"key":"27a64feb-d5dd-436b-af30-453bac7f5e33"
+}
+```
+
+In response you will obtain links to origin and resized images with parameters of resizing.
+
+Example response:
+```
+[
+{
+"original":"localhost:8080/images/1/original/1",
+"resized":"localhost:8080/images/1/resized/1",
+"height":100,
+"width":50
+},
+{
+"original":"localhost:8080/images/1/original/1",
+"resized":"localhost:8080/images/1/resized/1",
+"height":100,
+"width":50
+},
+...
+]
+```
 
 > Errors
 
