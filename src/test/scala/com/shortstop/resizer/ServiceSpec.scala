@@ -13,9 +13,9 @@ import spray.http.HttpMethods._
 import spray.http._
 import spray.http.StatusCodes._
 import TestData._
-import spray.routing.MalformedRequestContentRejection
 
 import scala.slick.driver.MySQLDriver.simple.Database.threadLocalSession
+import scala.util.Random
 
 class ServiceSpec extends ServiceTestBase {
   //db for tests sets in application.conf
@@ -118,6 +118,23 @@ class ServiceSpec extends ServiceTestBase {
         responseAs[Map[String, String]].get("error") ===
           Some(s"Wrong resize parameters: [height: $requestHeight; width: $requestWidth]. " +
             s"Target size must be at least 3x3")
+      }
+    }
+
+    "return \"Bad request\" error if base64 string can't be converted to an image" in {
+      val base64 = Random.nextString(100)
+      val requestHeight = 100
+      val requestWidth = 50
+      HttpRequest(
+        method = POST,
+        uri = resizeLink,
+        entity = HttpEntity(ContentType(MediaTypes.`application/json`),
+          Serialization.write(ResizeParameters(userKey, base64, requestHeight, requestWidth)))
+      ) ~> service ~> check {
+        response.status should be equalTo BadRequest
+        response.entity should not be equalTo(None)
+        responseAs[Map[String, String]].get("error") ===
+          Some("A base64 string can't be converted to an image.")
       }
     }
   }
