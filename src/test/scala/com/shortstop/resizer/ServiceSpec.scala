@@ -1,6 +1,7 @@
 package com.shortstop.resizer
 
 import java.io.File
+import java.util.UUID
 
 import com.sksamuel.scrimage.Image
 import spray.http.HttpEntity
@@ -12,6 +13,7 @@ import spray.http.HttpMethods._
 import spray.http._
 import spray.http.StatusCodes._
 import TestData._
+import spray.routing.MalformedRequestContentRejection
 
 import scala.slick.driver.MySQLDriver.simple.Database.threadLocalSession
 
@@ -78,6 +80,24 @@ class ServiceSpec extends ServiceTestBase {
           resizedFile.delete() === true
           originFile.delete() === true
         }
+      }
+    }
+
+    "wrong user key" in {
+      val base64 = Base64encoder.encode(jpgImage)
+      val requestHeight = 50
+      val requestWidth = 100
+      val randomId = UUID.randomUUID().toString
+      HttpRequest(
+        method = POST,
+        uri = resizeLink,
+        entity = HttpEntity(ContentType(MediaTypes.`application/json`),
+          Serialization.write(ResizeParameters(randomId, base64, requestHeight, requestWidth)))
+      ) ~> service ~> check {
+        response.status should be equalTo NotFound
+        response.entity should not be equalTo(None)
+        responseAs[Map[String, String]].get("error") ===
+          Some(s"User with id=$randomId does not exist")
       }
     }
   }
