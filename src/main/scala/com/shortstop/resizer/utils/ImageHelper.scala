@@ -27,7 +27,7 @@ object ImageHelper {
     try {
       val imageBytes = decode(base64image)
       val origin = Image(imageBytes)
-      val resized = origin.scaleTo(height, width)
+      val resized = origin.scaleTo(width, height)
 
       Right(origin, resized)
     } catch {
