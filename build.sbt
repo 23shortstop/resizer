@@ -21,7 +21,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" % "akka-actor_2.10" % akkaVersion,
   "com.typesafe.akka" % "akka-slf4j_2.10" % akkaVersion,
   "ch.qos.logback" % "logback-classic" % "1.1.2",
-  "org.specs2" %% "specs2" % "2.3.13" % "test"
+  "org.specs2" %% "specs2" % "2.3.13" % "test",
+  "com.sksamuel.scrimage" %% "scrimage-core" % "2.1.0"
 )
 
 resolvers ++= Seq(
