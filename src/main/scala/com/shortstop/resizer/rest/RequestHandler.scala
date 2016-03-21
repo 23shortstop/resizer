@@ -36,7 +36,7 @@ trait RequestHandler extends SLF4JLogging with Configuration {
         "original" -> s"$serviceHost:$servicePort/${result.original}",
         "resized" -> s"$serviceHost:$servicePort/${result.resized}",
         "height" -> result.height,
-        "height" -> result.height
+        "width" -> result.width
       )
     }
   }
