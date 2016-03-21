@@ -21,7 +21,10 @@ class ServiceSpec extends ServiceTestBase {
   //db for tests sets in application.conf
   //if the specified db does not exist, then it should be created.
 
-  def before = cleanDB()
+  def before = {
+    cleanDB()
+    saveUser
+  }
 
   "Service" should {
     "create users" in {
@@ -40,7 +43,6 @@ class ServiceSpec extends ServiceTestBase {
     }
 
     "resize images" in {
-      saveUser
       testImages.map { image =>
         val base64 = Base64encoder.encode(image)
         val requestHeight = 50
@@ -83,7 +85,7 @@ class ServiceSpec extends ServiceTestBase {
       }
     }
 
-    "wrong user key" in {
+    "return \"Not found\" error if a wrong user key was provided" in {
       val base64 = Base64encoder.encode(jpgImage)
       val requestHeight = 50
       val requestWidth = 100
@@ -98,6 +100,24 @@ class ServiceSpec extends ServiceTestBase {
         response.entity should not be equalTo(None)
         responseAs[Map[String, String]].get("error") ===
           Some(s"User with id=$randomId does not exist")
+      }
+    }
+
+    "return \"Bad request\" error if wrong parameters were provided" in {
+      val base64 = Base64encoder.encode(jpgImage)
+      val requestHeight = 0
+      val requestWidth = 0
+      HttpRequest(
+        method = POST,
+        uri = resizeLink,
+        entity = HttpEntity(ContentType(MediaTypes.`application/json`),
+          Serialization.write(ResizeParameters(userKey, base64, requestHeight, requestWidth)))
+      ) ~> service ~> check {
+        response.status should be equalTo BadRequest
+        response.entity should not be equalTo(None)
+        responseAs[Map[String, String]].get("error") ===
+          Some(s"Wrong resize parameters: [height: $requestHeight; width: $requestWidth]. " +
+            s"Target size must be at least 3x3")
       }
     }
   }
